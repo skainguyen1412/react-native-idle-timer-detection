@@ -1,6 +1,14 @@
 import { StatusBar } from "expo-status-bar";
-import { useRef, useState } from "react";
-import { Button, PanResponder, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Button,
+  Keyboard,
+  PanResponder,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export default function App() {
   //TODO: Planning to develop propotype for idle timer in react native
@@ -29,6 +37,25 @@ export default function App() {
     })
   ).current;
 
+  useEffect(() => {
+    // --- A. Listen for Keyboard Appearance ---
+
+    // Fired when keyboard starts sliding up
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      console.log("Keyboard is OPEN");
+    });
+
+    // Fired when keyboard is fully closed
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      console.log("Keyboard is CLOSED");
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
       <Text>{isIdle ? "Idle" : "Active"}</Text>
@@ -37,6 +64,16 @@ export default function App() {
         title="Test button pressed"
         onPress={() => {
           console.log("Test button pressed");
+        }}
+      />
+      <TextInput
+        placeholder="Enter your text"
+        style={{
+          borderWidth: 1,
+          borderColor: "black",
+          padding: 10,
+          margin: 10,
+          width: "80%",
         }}
       />
     </View>
