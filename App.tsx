@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
     Button,
     Keyboard,
+    Modal,
     PanResponder,
     StyleSheet,
     Text,
@@ -33,6 +34,9 @@ export default function App() {
     const firstLoad = useRef<boolean>(true);
     const eventsBound = useRef<boolean>(false);
     const tId = useRef<number>(null);
+
+    // Show prompt
+    const [isPrompt, setIsPrompt] = useState(false);
 
     const panResponder = useRef(
         PanResponder.create({
@@ -132,8 +136,34 @@ export default function App() {
         };
     });
 
+    useEffect(() => {
+        if (!countdownTime) return;
+
+        if (countdownTime > 10) {
+            setIsPrompt(true);
+        }
+    }, [countdownTime]);
+
     return (
         <View style={styles.container} {...panResponder.panHandlers}>
+            <Modal animationType="slide" visible={isPrompt}>
+                <View
+                    style={{
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }}
+                >
+                    <Text>aa</Text>
+                    <Button
+                        title="Hide prompt"
+                        onPress={() => {
+                            setIsPrompt(false);
+                        }}
+                    />
+                </View>
+            </Modal>
+
             <Text>{idle.current ? "Idle" : "Active"}</Text>
             {countdownTime && <Text>Timer {countdownTime.toFixed()}</Text>}
             <StatusBar style="auto" />
