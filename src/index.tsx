@@ -24,6 +24,7 @@ export const DemoScreen = () => {
     useEffect(() => {
         setInterval(() => {
             console.log(idleTimer?.getRemainingTime());
+            setCountdownTime(idleTimer?.getRemainingTime() ?? 0);
         }, 1000);
     }, [idleTimer]);
 
@@ -48,7 +49,7 @@ export const DemoScreen = () => {
             </Modal>
 
             {/* <Text>{idle.current ? "Idle" : "Active"}</Text> */}
-            {countdownTime && <Text>Timer {countdownTime.toFixed()}</Text>}
+            {countdownTime && <Text>Timer {countdownTime}</Text>}
 
             <StatusBar />
             <Button

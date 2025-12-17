@@ -12,12 +12,6 @@ export function useIdleTimer() {
     const tid = useRef<NodeJS.Timeout | null>(null);
 
     const onIdle = () => {
-        // TODO: Tempt implement for now, should be pass by user
-        // TODO: Need to implement flow to trigger onIdle
-        // *******************
-        // Need to create a setTimeout to trigger onIdle, with handle to clear the timeout
-        // If the timeout is not destroy before it reach it will trigger onIdle
-
         console.log("onIdle");
     };
 
@@ -38,7 +32,7 @@ export function useIdleTimer() {
         const remainingTime = timeOutTime - Date.now();
 
         if (remainingTime > 0) {
-            return remainingTime;
+            return (remainingTime / 1000).toFixed();
         } else {
             return 0;
         }
