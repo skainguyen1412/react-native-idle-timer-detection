@@ -1,16 +1,7 @@
-import {
-    createContext,
-    PropsWithChildren,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
-import { Keyboard, PanResponder, View } from "react-native";
+import React, { createContext, PropsWithChildren, useContext } from "react";
+import { View } from "react-native";
 import { IdleTimerProps } from "./types/IdleTimerProps";
 import { useIdleTimer } from "./useIdleTimer";
-import React from "react";
 
 const IdleTimerContext = createContext<IdleTimerProps | null>(null);
 

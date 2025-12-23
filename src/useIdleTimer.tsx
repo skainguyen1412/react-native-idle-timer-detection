@@ -9,17 +9,17 @@ import { Keyboard, PanResponder } from "react-native";
 
 export function useIdleTimer() {
     const startTime = useRef<number>(Date.now());
-
     const currentTime = useRef<number>(Date.now());
     const lastIdle = useRef<number>(null);
     const lastReset = useRef<number>(null);
 
-    const isPause = useRef<boolean>(false);
     const pauseTime = useRef<number>(null);
 
     const isIdle = useRef<boolean>(false);
 
     const remaningTime = useRef<number>(10); // Time countdown to trigger onIdle
+
+    const currentState = useRef<"running" | "paused" | "idle">("running");
 
     const tid = useRef<NodeJS.Timeout | null>(null);
 
@@ -27,11 +27,15 @@ export function useIdleTimer() {
         console.log("onIdle");
     };
 
+    const getCurrentState = () => {
+        return currentState.current;
+    };
+
     const getRemainingTime = () => {
         // Handle for special case when user pause the timer
-        if (isPause.current && pauseTime.current) {
+        if (currentState.current === "paused" && pauseTime.current) {
             if (pauseTime.current > 0) {
-                return (pauseTime.current / 1000).toFixed();
+                return Math.round(pauseTime.current / 1000);
             } else {
                 return 0;
             }
@@ -40,7 +44,7 @@ export function useIdleTimer() {
                 currentTime.current + remaningTime.current * 1000;
             const remainingTime = timeOutTime - Date.now();
             if (remainingTime > 0) {
-                return (remainingTime / 1000).toFixed();
+                return Math.round(remainingTime / 1000);
             } else {
                 return 0;
             }
@@ -53,7 +57,7 @@ export function useIdleTimer() {
             clearTimeout(tid.current);
         }
 
-        isPause.current = true;
+        currentState.current = "paused";
         pauseTime.current =
             currentTime.current + remaningTime.current * 1000 - Date.now();
     };
@@ -66,7 +70,7 @@ export function useIdleTimer() {
     };
 
     const resume = () => {
-        isPause.current = false;
+        currentState.current = "running";
         pauseTime.current = null;
 
         if (!tid.current) {
@@ -93,6 +97,12 @@ export function useIdleTimer() {
         tid.current = setTimeout(() => {
             handleIdle();
         }, remaningTime.current * 1000);
+
+        return () => {
+            if (tid.current) {
+                clearTimeout(tid.current);
+            }
+        };
     }, []);
 
     const reset = () => {
@@ -131,7 +141,6 @@ export function useIdleTimer() {
     }, []);
 
     const getIsIdle = useCallback(() => {
-        console.log("getIsIdle", isIdle.current);
         return isIdle.current;
     }, [isIdle.current]);
 
@@ -151,6 +160,8 @@ export function useIdleTimer() {
         pause,
         resume,
         getIsIdle,
+        getLastReset: () => lastReset.current,
+        getCurrentState,
     };
 
     return idleTimer;

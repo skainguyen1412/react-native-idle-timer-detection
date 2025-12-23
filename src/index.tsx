@@ -10,14 +10,6 @@ export const DemoScreen = () => {
 
     const idleTimer = useIdleTimerContext();
 
-    const getSecondsFromDateCurrent = (date: number) => {
-        // Need to make this update everytime
-        const currentTime = Date.now();
-        const time = currentTime - date;
-
-        return time / 1000;
-    };
-
     useEffect(() => {
         const intervalId = setInterval(() => {
             setCountdownTime(idleTimer.getRemainingTime() ?? 0);
