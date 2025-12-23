@@ -9,7 +9,7 @@ export interface IdleTimerProps {
     resume: () => void;
     currentTime: number;
     getIsIdle: () => boolean;
-    getLastReset: () => number;
+    getLastReset: () => number | null;
     getCurrentState: () => "running" | "paused" | "idle";
     // idle: boolean;
     // prompted: boolean;

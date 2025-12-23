@@ -54,4 +54,35 @@ describe("useIdleTimer", () => {
 
         jest.useRealTimers();
     });
+
+    test("Reset timer on action (touch/keyboard)", () => {
+        jest.useFakeTimers();
+        const { result } = setup();
+
+        // Let 2 seconds pass to reduce remaining time
+        jest.advanceTimersByTime(2000);
+        expect(result.current.getRemainingTime()).toBe(8);
+
+        // Simulate a touch
+        result.current.reset();
+
+        expect(result.current.getRemainingTime()).toBe(10);
+        expect(result.current.getCurrentState()).toBe("running");
+        expect(result.current.getLastReset()).toEqual(Date.now());
+
+        jest.useRealTimers();
+    });
+
+    test("Test trigger onIdle when time is up", () => {
+        jest.useFakeTimers();
+
+        const { result } = setup();
+
+        expect(result.current.getIsIdle()).toBe(false);
+
+        jest.advanceTimersByTime(10000);
+        expect(result.current.getIsIdle()).toBe(true);
+
+        jest.useRealTimers();
+    });
 });
