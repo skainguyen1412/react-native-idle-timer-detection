@@ -93,6 +93,12 @@ export function useIdleTimer() {
         tid.current = setTimeout(() => {
             handleIdle();
         }, remaningTime.current * 1000);
+
+        return () => {
+            if (tid.current) {
+                clearTimeout(tid.current);
+            }
+        };
     }, []);
 
     const reset = () => {
