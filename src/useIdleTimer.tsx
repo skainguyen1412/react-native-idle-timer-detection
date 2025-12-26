@@ -3,210 +3,267 @@ import { Keyboard, PanResponder, AppState } from "react-native";
 import { UseIdleTimerProps } from "./types/useIdleTimerProps";
 
 export function useIdleTimer(props: UseIdleTimerProps = {}) {
+    // Timeout in seconds, converted to ms internally
+    const timeoutSeconds = props.timeout ?? 10;
+    const timeoutMs = timeoutSeconds * 1000;
+
+    // Timestamps
     const startTime = useRef<number>(Date.now());
-    const currentTime = useRef<number>(Date.now());
-    const lastIdle = useRef<number>(null);
-    const lastReset = useRef<number>(null);
+    const lastIdle = useRef<number | null>(null);
+    const lastReset = useRef<number | null>(null);
 
-    const pauseTime = useRef<number>(null);
+    // Deadline-based time tracking
+    const deadlineMs = useRef<number | null>(null);
+    const pausedRemainingMs = useRef<number | null>(null);
 
+    // State tracking
     const isIdle = useRef<boolean>(false);
-
-    const remainingTime = useRef<number>(props.timeout ?? 10); // Time countdown to trigger onIdle
-
     const currentState = useRef<"running" | "paused" | "idle">("running");
 
-    const tid = useRef<NodeJS.Timeout | null>(null);
+    // Timer handle (RN-safe type)
+    const tid = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const onIdle = () => {
-        console.log("onIdle");
-        props.onIdle?.();
-    };
+    // Pause reason tracking (for composable pause sources)
+    const pauseReasons = useRef<Set<string>>(new Set());
 
-    const getCurrentState = () => {
-        return currentState.current;
-    };
+    // Store callbacks in refs to prevent stale closures
+    const onIdleRef = useRef(props.onIdle);
+    const onActiveRef = useRef(props.onActive);
+    const onActionRef = useRef(props.onAction);
 
-    const getRemainingTime = () => {
-        // Handle for special case when user pause the timer
-        if (currentState.current === "paused" && pauseTime.current) {
-            if (pauseTime.current > 0) {
-                return Math.round(pauseTime.current / 1000);
-            } else {
-                return 0;
-            }
-        } else {
-            const timeOutTime =
-                currentTime.current + remainingTime.current * 1000;
-            const remainingTimeValue = timeOutTime - Date.now();
-            if (remainingTimeValue > 0) {
-                return Math.round(remainingTimeValue / 1000);
-            } else {
-                return 0;
-            }
-        }
-    };
+    // Update callback refs when props change
+    useEffect(() => {
+        onIdleRef.current = props.onIdle;
+        onActiveRef.current = props.onActive;
+        onActionRef.current = props.onAction;
+    }, [props.onIdle, props.onActive, props.onAction]);
 
-    const pause = useCallback(() => {
-        // We need to clear the timeout and pause the remainingTime
+    // Scheduler helpers
+    const clearTimer = useCallback(() => {
         if (tid.current) {
             clearTimeout(tid.current);
             tid.current = null;
         }
-
-        currentState.current = "paused";
-        pauseTime.current =
-            currentTime.current + remainingTime.current * 1000 - Date.now();
     }, []);
 
     const handleIdle = useCallback(() => {
-        isIdle.current = true;
+        // Prevent firing multiple times if already idle
+        if (currentState.current === "idle") {
+            return;
+        }
 
-        // Trigger action
-        onIdle();
+        currentState.current = "idle";
+        isIdle.current = true;
+        lastIdle.current = Date.now();
+
+        onIdleRef.current?.();
     }, []);
 
-    const resume = useCallback(() => {
-        currentState.current = "running";
-
-        // Use pauseTime if available (when resuming from paused state), otherwise use remainingTime
-        const timeoutDuration =
-            pauseTime.current !== null
-                ? pauseTime.current
-                : remainingTime.current * 1000;
-
-        // Update currentTime and remainingTime when resuming
-        if (pauseTime.current !== null) {
-            currentTime.current = Date.now();
-            remainingTime.current = Math.max(
-                0,
-                Math.round(timeoutDuration / 1000)
-            );
-        }
-
-        pauseTime.current = null;
-
-        if (!tid.current) {
+    const scheduleIdle = useCallback(
+        (remainingMs: number) => {
+            clearTimer();
             tid.current = setTimeout(() => {
                 handleIdle();
-            }, timeoutDuration);
+            }, Math.max(0, remainingMs));
+        },
+        [clearTimer, handleIdle]
+    );
+
+    const getRemainingTime = useCallback(() => {
+        if (
+            currentState.current === "paused" &&
+            pausedRemainingMs.current !== null
+        ) {
+            // When paused, return the stored remaining time in seconds
+            return Math.max(0, Math.round(pausedRemainingMs.current / 1000));
+        } else if (currentState.current === "idle") {
+            return 0;
+        } else if (deadlineMs.current !== null) {
+            // When running, calculate remaining time from deadline
+            const remainingMs = Math.max(0, deadlineMs.current - Date.now());
+            return Math.round(remainingMs / 1000);
+        } else {
+            // Fallback: return full timeout
+            return timeoutSeconds;
         }
-    }, [handleIdle]);
+    }, [timeoutSeconds]);
+
+    const pause = useCallback(
+        (reason: string = "manual") => {
+            // Don't pause if already paused or idle
+            if (
+                currentState.current === "paused" ||
+                currentState.current === "idle"
+            ) {
+                pauseReasons.current.add(reason);
+                return;
+            }
+
+            clearTimer();
+            pauseReasons.current.add(reason);
+
+            // Calculate and store remaining time
+            if (deadlineMs.current !== null) {
+                pausedRemainingMs.current = Math.max(
+                    0,
+                    deadlineMs.current - Date.now()
+                );
+            } else {
+                pausedRemainingMs.current = timeoutMs;
+            }
+
+            currentState.current = "paused";
+        },
+        [clearTimer, timeoutMs]
+    );
+
+    const resume = useCallback(
+        (reason: string = "manual") => {
+            // Remove pause reason
+            pauseReasons.current.delete(reason);
+
+            // Don't resume if other pause reasons still exist
+            if (pauseReasons.current.size > 0) {
+                return;
+            }
+
+            // Don't resume if already running
+            if (currentState.current === "running") {
+                return;
+            }
+
+            // Calculate deadline from paused remaining time
+            const remainingMs =
+                pausedRemainingMs.current !== null
+                    ? pausedRemainingMs.current
+                    : timeoutMs;
+
+            deadlineMs.current = Date.now() + remainingMs;
+            pausedRemainingMs.current = null;
+            currentState.current = "running";
+
+            scheduleIdle(remainingMs);
+        },
+        [scheduleIdle, timeoutMs]
+    );
+
+    const reset = useCallback(() => {
+        const wasIdle = isIdle.current;
+
+        // Clear idle state
+        isIdle.current = false;
+        currentState.current = "running";
+        lastReset.current = Date.now();
+
+        // Clear pause state
+        pausedRemainingMs.current = null;
+        pauseReasons.current.clear();
+
+        // Fire callbacks
+        onActionRef.current?.();
+        if (wasIdle) {
+            onActiveRef.current?.();
+        }
+
+        // Reset deadline and schedule new timeout
+        deadlineMs.current = Date.now() + timeoutMs;
+        scheduleIdle(timeoutMs);
+    }, [scheduleIdle, timeoutMs]);
 
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponderCapture: (evt, gestureState) => {
-                console.log("User touched the screen!");
-
+            onStartShouldSetPanResponderCapture: () => {
                 reset();
                 return false;
             },
         })
     ).current;
 
+    // Initialize timer on mount
     useEffect(() => {
-        // On mount
-        console.log("mounting");
-        tid.current = setTimeout(() => {
-            handleIdle();
-        }, remainingTime.current * 1000);
+        deadlineMs.current = Date.now() + timeoutMs;
+        scheduleIdle(timeoutMs);
 
         return () => {
-            if (tid.current) {
-                clearTimeout(tid.current);
-            }
+            clearTimer();
         };
     }, []);
 
+    // AppState listener
     useEffect(() => {
-        // Guard against AppState not being available (e.g., in test environments)
         if (!AppState || !AppState.addEventListener) {
             return;
         }
 
         const subscription = AppState.addEventListener("change", (state) => {
-            // Pause when the app is in the background
             if (state === "active") {
-                console.log("AppState changed to active, resuming");
-                resume();
+                resume("appstate");
             } else {
-                console.log("AppState changed to background, pausing");
-                pause();
+                pause("appstate");
             }
-
-            console.log("AppState changed to", state);
         });
 
         return () => {
             subscription.remove();
         };
-    }, [resume, pause]);
+    }, [pause, resume]);
 
-    const reset = () => {
-        currentTime.current = Date.now();
-        lastReset.current = Date.now();
-        // isIdle.current = false;
-
-        if (tid.current) {
-            clearTimeout(tid.current);
-            tid.current = null;
-        }
-
-        // Reset state to running and clear pauseTime
-        currentState.current = "running";
-        pauseTime.current = null;
-
-        // Reset remainingTime back to the original timeout value
-        remainingTime.current = props.timeout ?? 10;
-
-        tid.current = setTimeout(() => {
-            handleIdle();
-        }, remainingTime.current * 1000);
-    };
-
+    // Keyboard listeners
     useEffect(() => {
-        // Guard against Keyboard not being available (e.g., in test environments)
         if (!Keyboard || !Keyboard.addListener) {
             return;
         }
 
         const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
-            console.log("Keyboard is OPEN");
-            reset();
-            pause();
+            reset(); // Keyboard open counts as activity
+            pause("keyboard");
         });
 
         const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-            resume();
+            resume("keyboard");
         });
 
         return () => {
             showSubscription.remove();
             hideSubscription.remove();
         };
+    }, [reset, pause, resume]);
+
+    const getCurrentState = useCallback(() => {
+        return currentState.current;
     }, []);
 
     const getIsIdle = useCallback(() => {
         return isIdle.current;
-    }, [isIdle.current]);
+    }, []);
 
-    const setIsIdle = useCallback(
-        (value: boolean) => {
-            isIdle.current = value;
-        },
-        [isIdle.current]
-    );
+    const getLastReset = useCallback(() => {
+        return lastReset.current;
+    }, []);
+
+    const getLastIdle = useCallback(() => {
+        return lastIdle.current;
+    }, []);
+
+    const getCurrentTime = useCallback(() => {
+        return Date.now();
+    }, []);
+
+    const getStartTime = useCallback(() => {
+        return startTime.current;
+    }, []);
 
     const idleTimer = {
         panResponder,
         reset,
-        currentTime: currentTime.current,
-        startTime: startTime.current,
+        getCurrentTime,
+        getStartTime,
         getRemainingTime,
         pause,
         resume,
         getIsIdle,
-        getLastReset: () => lastReset.current,
+        getLastReset,
+        getLastIdle,
         getCurrentState,
     };
 

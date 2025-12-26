@@ -1,10 +1,10 @@
 import React, { createContext, PropsWithChildren, useContext } from "react";
 import { View } from "react-native";
-import { IdleTimerProps } from "./types/IdleTimerProps";
+import { IdleTimerHandle } from "./types/IdleTimerProps";
 import { useIdleTimer } from "./useIdleTimer";
 import { UseIdleTimerProps } from "./types/useIdleTimerProps";
 
-const IdleTimerContext = createContext<IdleTimerProps | null>(null);
+const IdleTimerContext = createContext<IdleTimerHandle | null>(null);
 
 export const useIdleTimerContext = () => {
     const context = useContext(IdleTimerContext);

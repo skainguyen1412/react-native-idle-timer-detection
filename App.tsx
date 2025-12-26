@@ -1,22 +1,18 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
-import {
-    Button,
-    Keyboard,
-    Modal,
-    PanResponder,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from "react-native";
-import { IdleTimerProvider, useIdleTimerContext } from "./src/IdleTimerContext";
+import { useState } from "react";
+import { StyleSheet } from "react-native";
+import { IdleTimerProvider } from "./src/IdleTimerContext";
 import { DemoScreen } from "./src";
 
 export default function App() {
+    const [isIdle, setIsIdle] = useState(false);
+
     return (
-        <IdleTimerProvider>
-            <DemoScreen />
+        <IdleTimerProvider
+            onIdle={() => setIsIdle(true)}
+            onActive={() => setIsIdle(false)}
+        >
+            <DemoScreen isIdle={isIdle} />
         </IdleTimerProvider>
     );
 }
