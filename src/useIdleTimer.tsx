@@ -1,11 +1,5 @@
-import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
-import { Keyboard, PanResponder } from "react-native";
+import React, { useCallback, useEffect, useRef } from "react";
+import { Keyboard, PanResponder, AppState } from "react-native";
 import { UseIdleTimerProps } from "./types/useIdleTimerProps";
 
 export function useIdleTimer(props: UseIdleTimerProps = {}) {
@@ -53,34 +47,51 @@ export function useIdleTimer(props: UseIdleTimerProps = {}) {
         }
     };
 
-    const pause = () => {
+    const pause = useCallback(() => {
         // We need to clear the timeout and pause the remainingTime
         if (tid.current) {
             clearTimeout(tid.current);
+            tid.current = null;
         }
 
         currentState.current = "paused";
         pauseTime.current =
             currentTime.current + remainingTime.current * 1000 - Date.now();
-    };
+    }, []);
 
-    const handleIdle = () => {
+    const handleIdle = useCallback(() => {
         isIdle.current = true;
 
         // Trigger action
         onIdle();
-    };
+    }, []);
 
-    const resume = () => {
+    const resume = useCallback(() => {
         currentState.current = "running";
+
+        // Use pauseTime if available (when resuming from paused state), otherwise use remainingTime
+        const timeoutDuration =
+            pauseTime.current !== null
+                ? pauseTime.current
+                : remainingTime.current * 1000;
+
+        // Update currentTime and remainingTime when resuming
+        if (pauseTime.current !== null) {
+            currentTime.current = Date.now();
+            remainingTime.current = Math.max(
+                0,
+                Math.round(timeoutDuration / 1000)
+            );
+        }
+
         pauseTime.current = null;
 
         if (!tid.current) {
             tid.current = setTimeout(() => {
                 handleIdle();
-            }, remainingTime.current * 1000);
+            }, timeoutDuration);
         }
-    };
+    }, [handleIdle]);
 
     const panResponder = useRef(
         PanResponder.create({
@@ -107,6 +118,30 @@ export function useIdleTimer(props: UseIdleTimerProps = {}) {
         };
     }, []);
 
+    useEffect(() => {
+        // Guard against AppState not being available (e.g., in test environments)
+        if (!AppState || !AppState.addEventListener) {
+            return;
+        }
+
+        const subscription = AppState.addEventListener("change", (state) => {
+            // Pause when the app is in the background
+            if (state === "active") {
+                console.log("AppState changed to active, resuming");
+                resume();
+            } else {
+                console.log("AppState changed to background, pausing");
+                pause();
+            }
+
+            console.log("AppState changed to", state);
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, [resume, pause]);
+
     const reset = () => {
         currentTime.current = Date.now();
         lastReset.current = Date.now();
@@ -114,7 +149,15 @@ export function useIdleTimer(props: UseIdleTimerProps = {}) {
 
         if (tid.current) {
             clearTimeout(tid.current);
+            tid.current = null;
         }
+
+        // Reset state to running and clear pauseTime
+        currentState.current = "running";
+        pauseTime.current = null;
+
+        // Reset remainingTime back to the original timeout value
+        remainingTime.current = props.timeout ?? 10;
 
         tid.current = setTimeout(() => {
             handleIdle();
@@ -122,6 +165,11 @@ export function useIdleTimer(props: UseIdleTimerProps = {}) {
     };
 
     useEffect(() => {
+        // Guard against Keyboard not being available (e.g., in test environments)
+        if (!Keyboard || !Keyboard.addListener) {
+            return;
+        }
+
         const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
             console.log("Keyboard is OPEN");
             reset();

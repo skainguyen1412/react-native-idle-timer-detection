@@ -1,4 +1,5 @@
 type KeyboardSubscription = { remove: () => void };
+type AppStateSubscription = { remove: () => void };
 
 export const Keyboard = {
     addListener: (
@@ -14,6 +15,16 @@ export const PanResponder = {
         return {
             panHandlers: {},
         };
+    },
+};
+
+export const AppState = {
+    currentState: "active",
+    addEventListener: (
+        _event: string,
+        _listener: (state: string) => void
+    ): AppStateSubscription => {
+        return { remove: () => {} };
     },
 };
 
