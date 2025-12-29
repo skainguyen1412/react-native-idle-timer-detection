@@ -30,8 +30,9 @@
         "./package.json": "./package.json"
     },
     "files": [
-        "lib",
-        "src",
+        "lib/commonjs",
+        "lib/module",
+        "lib/typescript/src",
         "README.md"
     ],
     "scripts": {

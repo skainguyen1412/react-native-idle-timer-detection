@@ -1,0 +1,84 @@
+# Source files - consumers use the built lib/
+src/
+
+# Demo app
+Demo/
+
+# Development files
+tests/
+coverage/
+__mocks__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Build config
+tsconfig.json
+jest.config.ts
+babel.config.js
+.prettierrc*
+.eslintrc*
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Documentation (not needed in package)
+docs/
+*.md
+!README.md
+
+# Development dependencies
+node_modules/
+
+# Build artifacts (should be in lib/, but exclude if accidentally present)
+dist/
+*.tsbuildinfo
+
+# Unnecessary TypeScript definition files (config files and mocks)
+lib/typescript/__mocks__/
+lib/typescript/babel.config.d.ts*
+lib/typescript/jest.config.d.ts*
+
+# TypeScript source maps (not needed for consumers)
+lib/typescript/**/*.d.ts.map
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Expo (not needed in library package)
+.expo/
+app.json
+web-build/
+
+# Native folders
+ios/
+android/
+
+# Package manager
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+pnpm-workspace.yaml
+

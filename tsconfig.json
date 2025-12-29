@@ -1,15 +1,15 @@
 {
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "strict": true
-  },
-  "exclude": [
-    "Demo",
-    "node_modules",
-    "lib",
-    "dist",
-    "coverage",
-    "**/*.test.ts",
-    "**/*.test.tsx"
-  ]
+    "extends": "expo/tsconfig.base",
+    "compilerOptions": {
+        "strict": true
+    },
+    "exclude": [
+        "Demo",
+        "node_modules",
+        "lib",
+        "dist",
+        "coverage",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+    ]
 }
