@@ -9,23 +9,26 @@ import {
     TextInput,
     View,
 } from "react-native";
-import { useIdleTimerContext } from "./IdleTimerContext";
+import { useIdleTimer } from "./useIdleTimer";
 
 // =============================================================================
 // DEMO SCREEN
 // A simple demo showcasing react-native-idle-timer features
 // =============================================================================
 
-interface DemoScreenProps {
-    /** Optional: Pass isIdle from parent for event-driven updates */
-    isIdle?: boolean;
-}
-
-export const DemoScreen = ({ isIdle: isIdleProp }: DemoScreenProps = {}) => {
+export const DemoScreen = () => {
     const [remainingTime, setRemainingTime] = useState(0);
-    const idleTimer = useIdleTimerContext();
+    const idleTimer = useIdleTimer({
+        timeout: 30, // 30 seconds
+        onIdle: () => {
+            console.log("User is idle");
+        },
+        onActive: () => {
+            console.log("User is active");
+        },
+    });
 
-    const isIdle = isIdleProp ?? idleTimer.getIsIdle();
+    const isIdle = idleTimer.getIsIdle();
     const state = idleTimer.getCurrentState();
 
     // Update countdown every second
@@ -38,7 +41,7 @@ export const DemoScreen = ({ isIdle: isIdleProp }: DemoScreenProps = {}) => {
     }, [idleTimer]);
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} {...idleTimer.panResponder.panHandlers}>
             <StatusBar barStyle="light-content" />
 
             <ScrollView
