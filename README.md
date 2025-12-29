@@ -4,7 +4,11 @@ A React Native library for detecting user idle time with automatic pause/resume 
 
 ## Demo
 
-https://github.com/user-attachments/assets/3345ec77-d977-4cea-952c-2c0413e9579a
+
+https://github.com/user-attachments/assets/ed5449ed-7be2-473d-8550-b821cdf58503
+
+
+
 
 To see the demo implementation, check out [`src/index.tsx`](src/index.tsx) which contains a complete `DemoScreen` component showcasing all features of the library including:
 
