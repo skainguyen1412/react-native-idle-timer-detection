@@ -1,4 +1,4 @@
-# react-native-idle-timer
+# react-native-idle-timer-detection
 
 A React Native library for detecting user idle time with automatic pause/resume support for keyboard and app state changes.
 
@@ -31,11 +31,11 @@ The demo implementation serves as a reference for how to use the library. You ca
 ## Installation
 
 ```bash
-npm install react-native-idle-timer
+npm install react-native-idle-timer-detection
 # or
-yarn add react-native-idle-timer
+yarn add react-native-idle-timer-detection
 # or
-pnpm add react-native-idle-timer
+pnpm add react-native-idle-timer-detection
 ```
 
 ## Quick Start
@@ -43,7 +43,7 @@ pnpm add react-native-idle-timer
 ### Using the Hook
 
 ```tsx
-import { useIdleTimer } from "react-native-idle-timer";
+import { useIdleTimer } from "react-native-idle-timer-detection";
 
 function MyComponent() {
     const idleTimer = useIdleTimer({
@@ -72,7 +72,7 @@ function MyComponent() {
 import {
     IdleTimerProvider,
     useIdleTimerContext,
-} from "react-native-idle-timer";
+} from "react-native-idle-timer-detection";
 
 function App() {
     return (
@@ -102,7 +102,7 @@ function MyComponent() {
 ### Basic Timer with Callbacks
 
 ```tsx
-import { useIdleTimer } from "react-native-idle-timer";
+import { useIdleTimer } from "react-native-idle-timer-detection";
 
 function MyScreen() {
     const idleTimer = useIdleTimer({
@@ -179,7 +179,7 @@ function MyComponent() {
 
 ```tsx
 import { useEffect, useState } from "react";
-import { useIdleTimer } from "react-native-idle-timer";
+import { useIdleTimer } from "react-native-idle-timer-detection";
 
 function CountdownDisplay() {
     const [remainingTime, setRemainingTime] = useState(0);
@@ -211,7 +211,7 @@ function CountdownDisplay() {
 import {
     IdleTimerProvider,
     useIdleTimerContext,
-} from "react-native-idle-timer";
+} from "react-native-idle-timer-detection";
 
 function App() {
     return (

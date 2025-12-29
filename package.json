@@ -1,5 +1,5 @@
 {
-    "name": "react-native-idle-timer",
+    "name": "react-native-idle-timer-detection",
     "version": "1.0.0",
     "main": "index.ts",
     "scripts": {

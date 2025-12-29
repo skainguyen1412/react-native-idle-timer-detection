@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "react-native-idle-timer",
-    "slug": "react-native-idle-timer",
+    "name": "react-native-idle-timer-detection",
+    "slug": "react-native-idle-timer-detection",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

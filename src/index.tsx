@@ -17,7 +17,7 @@ import { useIdleTimer } from "./useIdleTimer";
 
 // =============================================================================
 // DEMO SCREEN
-// A simple demo showcasing react-native-idle-timer features
+// A simple demo showcasing react-native-idle-timer-detection features
 // =============================================================================
 
 export const DemoScreen = () => {
